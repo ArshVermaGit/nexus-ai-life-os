@@ -1,0 +1,29 @@
+# NEXUS - AI Life Operating System
+# Google Gemini Hackathon 2026
+
+# Google Gemini SDK (REQUIRED)
+google-generativeai>=0.8.0
+
+# Screen Capture & Image Processing
+mss>=9.0.1
+pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Database
+chromadb>=0.4.0
+
+# Data Processing
+numpy>=1.24.0
+
+# OCR (Optional)
+pytesseract>=0.3.10
+
+# Web UI (Replacement for Tkinter)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+jinja2>=3.1.2
+python-multipart>=0.0.6
+
+# Environment & Configuration
+python-dotenv>=1.0.0
+pydantic>=2.5.0

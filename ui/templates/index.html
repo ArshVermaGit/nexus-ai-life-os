@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS - AI Life OS</title>
+    <style>
+        body { background-color: #0a0a0f; color: #e0e0ef; }
+    </style>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-animation" id="neural-canvas-container">
+        <canvas id="neuralCanvas"></canvas>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="brand">
+                <i class="fa-solid fa-brain"></i>
+                <h1>NEXUS <span class="version">OS v1.0</span></h1>
+            </div>
+            <div class="header-controls">
+                <div class="status-badge" id="status-badge">
+                    <span class="status-dot"></span>
+                    <span id="status-text">OFFLINE</span>
+                </div>
+                <button id="focus-btn" class="focus-toggle">
+                    <i class="fa-solid fa-bullseye"></i> Focus Mode
+                </button>
+            </div>
+        </header>
+
+        <div id="alert-section" class="alert-banner">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span id="alert-message">System Alert</span>
+            <button onclick="dismissAlert()" class="dismiss-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Productivity Score -->
+            <div class="card score-card">
+                <h3>Productivity Score</h3>
+                <div class="score-circle">
+                    <svg viewBox="0 0 36 36" class="circular-chart">
+                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <path class="circle" stroke-dasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        <text x="18" y="20.35" class="percentage">85%</text>
+                    </svg>
+                </div>
+                <p class="score-label">High Efficiency</p>
+            </div>
+
+            <!-- Activity Chart -->
+            <div class="card chart-card">
+                <h3>Activity Analysis</h3>
+                <canvas id="activityChart"></canvas>
+            </div>
+
+            <!-- Controls & Stats -->
+            <div class="card controls-card">
+                <h3>System Control</h3>
+                <div class="control-group">
+                    <button id="start-btn" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Cortex</button>
+                    <button id="stop-btn" class="btn btn-danger" disabled><i class="fa-solid fa-stop"></i> Terminate</button>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Memories</span>
+                        <span class="stat-value" id="memory-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Uptime</span>
+                        <span class="stat-value" id="uptime">0h 0m</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Interface -->
+            <div class="card query-card">
+                <h3><i class="fa-solid fa-comments"></i> Neural Query</h3>
+                <div class="chat-interface">
+                    <div id="query-response" class="response-area">
+                        <p class="placeholder">Ask NEXUS anything about your digital life...</p>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="query-input" placeholder="Type your query...">
+                        <button id="query-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Log -->
+            <div class="card log-card">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Live Stream</h3>
+                <div id="activity-log" class="activity-list">
+                    <!-- Javascript populates this -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
