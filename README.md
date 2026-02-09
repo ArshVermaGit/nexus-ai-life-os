@@ -59,8 +59,8 @@ Stop doom-scrolling and get to work.
 1.  **Clone the repository**:
 
     ```bash
-    git clone https://github.com/yourusername/NEXUS.git
-    cd NEXUS
+    git clone https://github.com/ArshVermaGit/nexus-ai-life-os.git
+    cd nexus-ai-life-os
     ```
 
 2.  **Run the launcher**:
@@ -141,3 +141,12 @@ We welcome contributions! Please fork the repo and submit a Pull Request.
 
 > **Built for the Google Gemini Hackathon 2026** 🚀  
 > _By Arsh Verma_
+
+---
+
+## 🌐 Connect with Me
+
+- **Email**: [arshverma.dev@gmail.com](mailto:arshverma.dev@gmail.com)
+- **GitHub**: [@ArshVermaGit](https://github.com/ArshVermaGit)
+- **LinkedIn**: [Arsh Verma](https://www.linkedin.com/in/arshvermadev/)
+- **X (Twitter)**: [@TheArshVerma](https://x.com/TheArshVerma)
