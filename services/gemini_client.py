@@ -59,6 +59,7 @@ class GeminiClient:
                             image_path: str,
                             app_name: str,
                             window_title: str,
+                            ocr_text: str = "",
                             recent_context: Optional[List[Dict]] = None) -> Dict:
         """
         Analyze a screenshot using Gemini's vision capabilities.
@@ -105,6 +106,9 @@ Current Context:
 
 Recent Activity:
 {context_text if context_text else "No recent activity recorded."}
+
+OCR Extracted Text (Fallback):
+{ocr_text if ocr_text else "No text extracted by OCR."}
 
 Analyze this screenshot and identify:
 
@@ -199,6 +203,36 @@ Respond ONLY with valid JSON (no markdown, no explanation):
         except Exception as e:
             print(f"[GeminiClient] Query embedding error: {e}")
             return self._fallback_embedding(query)
+            
+    async def transcribe_audio(self, audio_path: str) -> str:
+        """
+        Transcribe an audio file using Gemini.
+        
+        Args:
+            audio_path: Path to the WAV/MP3 file
+            
+        Returns:
+            Transcription text
+        """
+        try:
+            # Upload file to Gemini (or pass data directly if supported/small)
+            # For now, we'll use the generative model with audio part
+            with open(audio_path, 'rb') as f:
+                audio_data = f.read()
+            
+            audio_part = {
+                "mime_type": "audio/wav", # Assuming WAV from AudioCaptureService
+                "data": audio_data
+            }
+            
+            prompt = "Transcribe the following audio accurately. If there is speech, write it down. If there is no significant speech, say [No Speech Detected]."
+            
+            response = self.chat_model.generate_content([prompt, audio_part])
+            return response.text.strip()
+            
+        except Exception as e:
+            print(f"[GeminiClient] Audio transcription error: {e}")
+            return f"[Error transcribing audio: {str(e)}]"
     
     async def chat(self, message: str, context: Optional[str] = None) -> str:
         """
