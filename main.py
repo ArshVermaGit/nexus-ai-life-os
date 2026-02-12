@@ -9,6 +9,8 @@ Built for Google Gemini Hackathon 2026.
 import sys
 import warnings
 import os
+import argparse
+import asyncio
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore")
@@ -55,6 +57,10 @@ def validate_config():
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="NEXUS - Your AI Life OS")
+    parser.add_argument('--ui', choices=['web', 'cli', 'desktop'], default='web', help="Launch UI mode")
+    args = parser.parse_args()
+
     print_banner()
     
     print("Initializing NEXUS...")
@@ -67,6 +73,12 @@ def main():
     if validate_config():
         print(f"✓ Google Gemini API configured ({Config.GEMINI_MODEL})")
     
+    if args.ui == 'cli':
+        from cli import NexusCLI
+        cli = NexusCLI()
+        asyncio.run(cli.chat_loop())
+        return
+
     print("✓ Starting Web UI...\n")
     
     # Launch Web UI
@@ -74,10 +86,13 @@ def main():
         import uvicorn
         from ui.web_app import app
         
-        print("\n🌐 NEXUS Web Interface running at http://localhost:8000")
-        print("Press Ctrl+C to stop\n")
-        
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        if args.ui == 'desktop':
+            import desktop_app
+            desktop_app.main()
+        else:
+            print("\n🌐 NEXUS Web Interface running at http://localhost:8000")
+            print("Press Ctrl+C to stop\n")
+            uvicorn.run(app, host="0.0.0.0", port=8000)
         
     except KeyboardInterrupt:
         print("\nShutting down NEXUS...")
