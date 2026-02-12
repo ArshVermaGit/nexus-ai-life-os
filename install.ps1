@@ -26,7 +26,7 @@ Write-Host "🔗 Creating global command 'nexus'..." -ForegroundColor Cyan
 $Content = @"
 @echo off
 cd /d $InstallDir
-python cli.py %*
+python main.py %*
 "@
 
 Set-Content -Path $WrapperPath -Value $Content
