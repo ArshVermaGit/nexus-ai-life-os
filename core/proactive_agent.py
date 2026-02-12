@@ -89,6 +89,10 @@ class ProactiveAgent:
         # Rule 3: Password in public field
         if await self.check_password_exposed(capture_data, analysis):
             return
+        
+        # Rule 4: Deadline approaching
+        if await self.check_deadline_approaching(capture_data, analysis):
+            return
     
     async def check_email_no_attachment(self, capture_data: Dict, analysis: Dict) -> bool:
         """
