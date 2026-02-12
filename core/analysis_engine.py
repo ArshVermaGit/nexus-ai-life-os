@@ -28,8 +28,10 @@ class AnalysisEngine:
         self.gemini = GeminiClient()
         self.db = DatabaseService()
         self.analysis_queue: asyncio.Queue = asyncio.Queue()
+        self.audio_queue: asyncio.Queue = asyncio.Queue()
         self.running = False
         self.processed_count = 0
+        self.audio_processed_count = 0
         self.on_analysis_callback: Optional[Callable] = None
     
     def set_callback(self, callback: Callable):
@@ -42,13 +44,21 @@ class AnalysisEngine:
         self.on_analysis_callback = callback
     
     async def start(self):
-        """Start processing the analysis queue."""
+        """Start processing analysis queues."""
         self.running = True
         print("[AnalysisEngine] Started")
         
+        # Start background tasks for each queue
+        tasks = [
+            asyncio.create_task(self._process_screen_queue()),
+            asyncio.create_task(self._process_audio_queue())
+        ]
+        await asyncio.gather(*tasks)
+
+    async def _process_screen_queue(self):
+        """Process screen captures from queue."""
         while self.running:
             try:
-                # Get next item from queue (with timeout to check running)
                 try:
                     capture_data = await asyncio.wait_for(
                         self.analysis_queue.get(),
@@ -63,32 +73,59 @@ class AnalysisEngine:
                 # Store results
                 await self.store_analysis(capture_data, analysis)
                 
-                # Call callback if set
+                # Call callback
                 if self.on_analysis_callback:
-                    try:
-                        await self.on_analysis_callback(capture_data, analysis)
-                    except Exception as e:
-                        print(f"[AnalysisEngine] Callback error: {e}")
+                    await self.on_analysis_callback(capture_data, analysis)
                 
-                # Mark task as done
                 self.analysis_queue.task_done()
                 self.processed_count += 1
-                
-            except asyncio.CancelledError:
-                print("[AnalysisEngine] Cancelled")
-                break
             except Exception as e:
-                print(f"[AnalysisEngine] Error: {e}")
+                print(f"[AnalysisEngine] Screen queue error: {e}")
+                await asyncio.sleep(1)
+
+    async def _process_audio_queue(self):
+        """Process audio chunks from queue."""
+        while self.running:
+            try:
+                try:
+                    audio_data = await asyncio.wait_for(
+                        self.audio_queue.get(),
+                        timeout=1.0
+                    )
+                except asyncio.TimeoutError:
+                    continue
+                
+                # Transcribe with Gemini
+                transcription = await self.gemini.transcribe_audio(audio_data['filepath'])
+                
+                # Store in database
+                await self.db.store_activity(
+                    timestamp=audio_data['timestamp'],
+                    activity_type='audio',
+                    app_name='System Audio',
+                    window_title='Audio Chunk',
+                    audio_path=audio_data['filepath'],
+                    transcription=transcription,
+                    analysis={'activity': 'Listening to audio', 'transcription': transcription}
+                )
+                
+                # Internal callback for audio
+                if self.on_analysis_callback:
+                    await self.on_analysis_callback(audio_data, {'activity': 'audio', 'transcription': transcription})
+                
+                self.audio_queue.task_done()
+                self.audio_processed_count += 1
+            except Exception as e:
+                print(f"[AnalysisEngine] Audio queue error: {e}")
                 await asyncio.sleep(1)
     
     async def queue_capture(self, capture_data: Dict):
-        """
-        Add capture to analysis queue.
-        
-        Args:
-            capture_data: Capture data from ScreenCaptureService
-        """
+        """Add capture to analysis queue."""
         await self.analysis_queue.put(capture_data)
+
+    async def queue_audio(self, audio_data: Dict):
+        """Add audio chunk to analysis queue."""
+        await self.audio_queue.put(audio_data)
     
     async def analyze_capture(self, capture_data: Dict) -> Dict:
         """
@@ -108,6 +145,7 @@ class AnalysisEngine:
             image_path=capture_data['filepath'],
             app_name=capture_data['app_name'],
             window_title=capture_data['window_title'],
+            ocr_text=capture_data.get('ocr_text', ''),
             recent_context=recent_context
         )
         
@@ -145,7 +183,7 @@ class AnalysisEngine:
     def stop(self):
         """Stop analysis engine."""
         self.running = False
-        print(f"[AnalysisEngine] Stopped (processed {self.processed_count} captures)")
+        print(f"[AnalysisEngine] Stopped (processed {self.processed_count} captures, {self.audio_processed_count} audio chunks)")
     
     def get_stats(self) -> Dict:
         """Get engine statistics."""
