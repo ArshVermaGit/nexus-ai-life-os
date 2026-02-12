@@ -20,6 +20,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import Config
 from utils.compression import compress_image
 from utils.privacy import should_capture, get_active_window_info
+from core.ocr_service import OCRService
+from core.audio_capture import AudioCaptureService
 
 
 class ScreenCaptureService:
@@ -43,7 +45,10 @@ class ScreenCaptureService:
         self.sct = None
         self.last_capture_time = 0
         self.on_capture_callback: Optional[Callable] = None
+        self.on_audio_callback: Optional[Callable] = None
         self.capture_count = 0
+        self.ocr = OCRService()
+        self.audio = AudioCaptureService()
         
     def set_callback(self, callback: Callable):
         """
@@ -53,12 +58,23 @@ class ScreenCaptureService:
             callback: Async function that receives capture_data dict
         """
         self.on_capture_callback = callback
+
+    def set_audio_callback(self, callback: Callable):
+        """
+        Set callback function called after each audio chunk is recorded.
+        """
+        self.on_audio_callback = callback
+        self.audio.set_callback(callback)
         
     async def start(self):
         """Start continuous screen capture."""
         self.running = True
         self.sct = mss.mss()
         print(f"[ScreenCapture] Started (interval: {self.interval}s)")
+        
+        # Also start audio capture if enabled
+        if Config.AUDIO_ENABLED:
+            await self.audio.start()
         
         while self.running:
             try:
@@ -132,6 +148,10 @@ class ScreenCaptureService:
             self.last_capture_time = time.time()
             self.capture_count += 1
             
+            # Perform OCR on the image
+            ocr_text = self.ocr.extract_text_from_image(img)
+            capture_data['ocr_text'] = ocr_text
+            
             return capture_data
             
         except Exception as e:
@@ -167,6 +187,7 @@ class ScreenCaptureService:
         if self.sct:
             self.sct.close()
             self.sct = None
+        self.audio.stop()
         print(f"[ScreenCapture] Stopped (captured {self.capture_count} frames)")
     
     def get_stats(self) -> Dict:
