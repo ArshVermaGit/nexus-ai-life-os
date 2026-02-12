@@ -18,7 +18,7 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # Install requirements
-echo "📦 Installing dependencies..."
+echo "📦 Installing terminal-optimized dependencies..."
 $PYTHON_CMD -m pip install -r requirements.txt
 
 # Create symlink
@@ -31,7 +31,7 @@ echo "🔗 Creating global command 'nexus'..."
 sudo bash -c "cat > $TARGET <<EOF
 #!/bin/bash
 cd $INSTALL_DIR
-$PYTHON_CMD cli.py \\\$@
+$PYTHON_CMD main.py \\\$@
 EOF"
 
 sudo chmod +x $TARGET
