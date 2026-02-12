@@ -35,11 +35,17 @@ class Config:
     MAX_SCREENSHOT_HEIGHT = 1080
     
     # ============================================
-    # Audio Settings (Future Feature)
+    # Audio Settings
     # ============================================
-    AUDIO_ENABLED = os.getenv("AUDIO_ENABLED", "false").lower() == "true"
+    AUDIO_ENABLED = os.getenv("AUDIO_ENABLED", "true").lower() == "true"
     AUDIO_SAMPLE_RATE = 16000
     AUDIO_CHUNK_DURATION = 30  # seconds
+    
+    # ============================================
+    # OCR Settings
+    # ============================================
+    OCR_ENABLED = os.getenv("OCR_ENABLED", "true").lower() == "true"
+    TESSERACT_PATH = os.getenv("TESSERACT_PATH", "tesseract")
     
     # ============================================
     # Storage Settings
