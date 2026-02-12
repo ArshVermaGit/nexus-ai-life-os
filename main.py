@@ -56,53 +56,24 @@ def validate_config():
 
 
 def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="NEXUS - Your AI Life OS")
-    parser.add_argument('--ui', choices=['web', 'cli', 'desktop'], default='web', help="Launch UI mode")
-    args = parser.parse_args()
-
-    print_banner()
-    
-    print("Initializing NEXUS...")
-    
+    """Main entry point for NEXUS CLI."""
     # Ensure directories exist
     Config.ensure_directories()
-    print("✓ Data directories ready")
     
     # Validate config
-    if validate_config():
-        print(f"✓ Google Gemini API configured ({Config.GEMINI_MODEL})")
+    if not Config.GOOGLE_API_KEY:
+        print("\n⚠️  WARNING: GOOGLE_API_KEY not set!")
+        print("   Get your key at: https://aistudio.google.com/app/apikey\n")
+        
+    # Standard CLI launch
+    from cli import NexusCLI
+    import asyncio
     
-    if args.ui == 'cli':
-        from cli import NexusCLI
-        cli = NexusCLI()
-        asyncio.run(cli.chat_loop())
-        return
+    cli = NexusCLI()
+    asyncio.run(cli.main_entry())
 
-    print("✓ Starting Web UI...\n")
-    
-    # Launch Web UI
-    try:
-        import uvicorn
-        from ui.web_app import app
-        
-        if args.ui == 'desktop':
-            import desktop_app
-            desktop_app.main()
-        else:
-            print("\n🌐 NEXUS Web Interface running at http://localhost:8000")
-            print("Press Ctrl+C to stop\n")
-            uvicorn.run(app, host="0.0.0.0", port=8000)
-        
-    except KeyboardInterrupt:
-        print("\nShutting down NEXUS...")
-    except ImportError:
-        print("\n❌ Error: fastapi/uvicorn not found. Install with: pip install fastapi uvicorn")
-    except Exception as e:
-        print(f"\n❌ Error starting Web UI: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+if __name__ == "__main__":
+    main()
     
     print("\nGoodbye! 👋")
 
