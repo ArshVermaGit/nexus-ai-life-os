@@ -1,25 +1,26 @@
-#!/bin/bash
+echo "✅ Environment Ready."
+echo ""
+echo "Choose Launch Mode (Terminal Preference):"
+echo "1) ⌨️  CLI Interactive Chat"
+echo "2) 🌐  Web Dashboard"
+echo "3) 🖥️  Desktop Window (Local)"
+read -p "Selection [1-3]: " mode
 
-# NEXUS Launcher Script
-# Ensures correct environment and dependencies
-
-echo "🚀 Initializing NEXUS..."
-
-# Check for python3
-if command -v python3 &>/dev/null; then
-    PYTHON=python3
-else
-    PYTHON=python
-fi
-
-# Check for pip
-if ! command -v pip &>/dev/null && ! command -v pip3 &>/dev/null; then
-    echo "❌ Error: pip not found. Please install Python."
-    exit 1
-fi
-
-echo "📦 Checking dependencies..."
-$PYTHON -m pip install -r requirements.txt &> /dev/null
-
-echo "✅ Launching NEXUS..."
-$PYTHON main.py
+case $mode in
+    1)
+        echo "🚀 Launching NEXUS CLI..."
+        $PYTHON cli.py chat
+        ;;
+    2)
+        echo "🚀 Launching NEXUS Web UI..."
+        $PYTHON main.py
+        ;;
+    3)
+        echo "🚀 Launching NEXUS Desktop Window..."
+        $PYTHON desktop_app.py
+        ;;
+    *)
+        echo "❌ Invalid selection. Defaulting to Web UI."
+        $PYTHON main.py
+        ;;
+esac
