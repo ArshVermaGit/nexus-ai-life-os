@@ -25,6 +25,7 @@ from core.analysis_engine import AnalysisEngine
 from core.proactive_agent import ProactiveAgent
 from core.query_engine import QueryEngine
 from services.database import DatabaseService
+from core.knowledge_synthesis import KnowledgeSynthesis
 
 
 # Initialize FastAPI
@@ -43,6 +44,7 @@ class NexusState:
         self.analysis_engine: Optional[AnalysisEngine] = None
         self.proactive_agent: Optional[ProactiveAgent] = None
         self.query_engine: Optional[QueryEngine] = None
+        self.synthesis_engine: Optional[KnowledgeSynthesis] = None
         self.database = DatabaseService()
         self.loop = None
         self.thread = None
@@ -57,6 +59,7 @@ state = NexusState()
 async def startup_event():
     """Initialize engines on startup."""
     state.query_engine = QueryEngine()
+    state.synthesis_engine = KnowledgeSynthesis()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -145,6 +148,20 @@ async def get_activities():
     return {"activities": activities}
 
 
+@app.get("/api/synthesis")
+async def get_synthesis():
+    """Get latest insights from Knowledge Synthesis."""
+    if not state.synthesis_engine:
+        state.synthesis_engine = KnowledgeSynthesis()
+        
+    try:
+        # Get daily highlights as a quick way to show synthesis
+        highlights = await state.synthesis_engine.daily_insights()
+        return {"insights": highlights.get('insights', ["Continuing to observe and connect memories..."])}
+    except Exception as e:
+        return {"insights": [f"Synthesis paused: {str(e)}"]}
+
+
 @app.post("/api/dismiss_alert")
 async def dismiss_alert():
     """Dismiss current alert."""
@@ -175,6 +192,11 @@ def run_nexus_loop():
         
         state.proactive_agent.set_alert_callback(lambda alert: asyncio.run_coroutine_threadsafe(
             on_alert(alert), loop
+        ))
+        
+        # Audio callback
+        state.capture_service.set_audio_callback(lambda data: asyncio.run_coroutine_threadsafe(
+            on_audio(data), loop
         ))
         
         # Run services
@@ -210,6 +232,11 @@ async def on_alert(alert_data):
         "priority": alert_data.get("priority"),
         "timestamp": datetime.now().isoformat()
     }
+
+async def on_audio(audio_data):
+    """Handle audio callback."""
+    if state.analysis_engine:
+        await state.analysis_engine.queue_audio(audio_data)
 
 
 def run_server():
