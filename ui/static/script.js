@@ -8,7 +8,8 @@ const api = {
     query: '/api/query',
     activities: '/api/activities',
     focus: '/api/toggle_focus',
-    dismissAlert: '/api/dismiss_alert'
+    dismissAlert: '/api/dismiss_alert',
+    synthesis: '/api/synthesis'
 };
 
 // Global State
@@ -31,7 +32,9 @@ const els = {
     queryBtn: document.getElementById('query-btn'),
     queryResponse: document.getElementById('query-response'),
     uptime: document.getElementById('uptime'),
-    memoryCount: document.getElementById('memory-count')
+    memoryCount: document.getElementById('memory-count'),
+    synthesisContent: document.getElementById('synthesis-content'),
+    audioPulse: document.getElementById('audio-pulse')
 };
 
 // --- Initialization ---
@@ -42,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pollStatus();
     setInterval(pollStatus, 1000);
     setInterval(updateUptime, 1000);
+    setInterval(fetchSynthesis, 15000); // Poll synthesis every 15s
 });
 
 // --- Event Listeners ---
@@ -149,6 +153,12 @@ async function pollStatus() {
         // Refresh Lists
         fetchActivities();
         
+        if (data.is_running) {
+            els.audioPulse.style.display = 'block';
+        } else {
+            els.audioPulse.style.display = 'none';
+        }
+        
     } catch (e) {
         // Silent fail for polling
     }
@@ -192,6 +202,27 @@ function updateUptime() {
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
     els.uptime.textContent = `${h}h ${m}m ${s}s`;
+}
+
+// --- Synthesis ---
+async function fetchSynthesis() {
+    if (!isRunning) return;
+    try {
+        const res = await fetch(api.synthesis);
+        const data = await res.json();
+        renderSynthesis(data.insights);
+    } catch(e) {}
+}
+
+function renderSynthesis(insights) {
+    if (!insights || insights.length === 0) return;
+    els.synthesisContent.innerHTML = '';
+    insights.forEach(insight => {
+        const div = document.createElement('div');
+        div.className = 'insight-item';
+        div.innerHTML = `<i class="fa-solid fa-lightbulb"></i> ${insight}`;
+        els.synthesisContent.appendChild(div);
+    });
 }
 
 // --- Activities & Chart ---
