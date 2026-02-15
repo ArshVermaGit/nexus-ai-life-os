@@ -57,8 +57,11 @@ def validate_config():
 
 def main():
     """Main entry point for NEXUS CLI."""
+    parser = argparse.ArgumentParser(description="NEXUS - Your AI Life OS")
+    parser.add_argument('command', nargs='?', choices=['chat', 'search', 'summary', 'check', 'start'], default='menu')
+    args = parser.parse_args()
+
     # Ensure directories exist
-    Config.ensure_directories()
     
     # Validate config
     if not Config.GOOGLE_API_KEY:
@@ -70,7 +73,7 @@ def main():
     import asyncio
     
     cli = NexusCLI()
-    asyncio.run(cli.main_entry())
+    asyncio.run(cli.main_entry(args.command))
 
 if __name__ == "__main__":
     main()
