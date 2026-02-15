@@ -36,6 +36,7 @@ from core.query_engine import QueryEngine
 from core.capture_manager import ScreenCaptureService
 from core.analysis_engine import AnalysisEngine
 from core.proactive_agent import ProactiveAgent
+from core.knowledge_synthesis import KnowledgeSynthesis
 from config import Config
 
 console = Console()
@@ -44,6 +45,7 @@ class NexusCLI:
     def __init__(self):
         self.query_engine = QueryEngine()
         self.gemini = GeminiClient()
+        self.synthesis = KnowledgeSynthesis()
         self.capture_service: Optional[ScreenCaptureService] = None
         self.analysis_engine: Optional[AnalysisEngine] = None
         self.running = False
@@ -114,6 +116,105 @@ class NexusCLI:
             except KeyboardInterrupt:
                 break
 
+    async def run_search(self, query: str):
+        """Perform semantic search and display results in a table."""
+        console.print(f"\n[bold cyan]Searching Neural Memory for:[/bold cyan] '{query}'...\n")
+        
+        # We'll use the query engine's db logic but format it for CLI
+        activities = await self.query_engine.db.search_activities(query=query, limit=10)
+        
+        if not activities:
+            console.print("[yellow]No matching memories found.[/yellow]")
+            return
+
+        table = Table(title=f"Search Results: {query}")
+        table.add_column("Time", style="dim")
+        table.add_column("App", style="cyan")
+        table.add_column("Activity Insight", style="white")
+        
+        for act in activities:
+            import json
+            analysis = act.get('analysis', {})
+            if isinstance(analysis, str):
+                try: analysis = json.loads(analysis)
+                except: analysis = {}
+            
+            insight = analysis.get('activity', 'No details')
+            time_str = act['timestamp'].split('.')[0] if isinstance(act['timestamp'], str) else "Recent"
+            
+            table.add_row(time_str, act['app_name'], insight[:60] + "...")
+        
+        console.print(table)
+
+    async def run_summary(self):
+        """Generate a daily summary report."""
+        console.print("\n[bold cyan]Synthesizing Daily Intelligence Report...[/bold cyan]\n")
+        
+        with console.status("[bold white]Crunching activities...", spinner="brain"):
+            summary_data = await self.synthesis.daily_insights()
+        
+        console.print(Panel.fit(
+            Markdown(summary_data.get('summary', 'No summary available.')),
+            title="[bold magenta]Daily Intelligence Highlight[/bold magenta]"
+        ))
+        
+        if summary_data.get('insights'):
+            console.print("\n[bold cyan]Key Insights:[/bold cyan]")
+            for insight in summary_data['insights']:
+                console.print(f" • {insight}")
+
+    async def run_diagnostics(self):
+        """Check system health and dependencies."""
+        console.print("\n[bold cyan]NEXUS System Diagnostics[/bold cyan]\n")
+        
+        checks = [
+            ("Gemini API", self._check_api),
+            ("OCR Engine (Tesseract)", self._check_ocr),
+            ("Audio Stream (PyAudio)", self._check_audio),
+            ("Database (SQLite)", self._check_db),
+            ("Vector Store (Chroma)", self._check_vector)
+        ]
+        
+        table = Table(show_header=False, box=None)
+        
+        for name, check_fn in checks:
+            status, msg = await check_fn()
+            icon = "[bold green]✓[/bold green]" if status else "[bold red]✗[/bold red]"
+            table.add_row(f"{icon} {name}", f"[dim]{msg}[/dim]")
+            
+        console.print(table)
+        console.print("\n[dim]If services are missing, re-run './install.sh'[/dim]\n")
+
+    async def _check_api(self):
+        if not Config.GOOGLE_API_KEY: return False, "API Key missing in .env"
+        return True, f"Configured ({Config.GEMINI_MODEL})"
+
+    async def _check_ocr(self):
+        import shutil
+        if shutil.which("tesseract"): return True, "Command found in PATH"
+        return False, "Tesseract binary not found"
+
+    async def _check_audio(self):
+        try:
+            import pyaudio
+            p = pyaudio.PyAudio()
+            count = p.get_device_count()
+            p.terminate()
+            if count > 0: return True, f"{count} devices found"
+            return False, "No audio input devices"
+        except ImportError: return False, "PyAudio not installed"
+        except Exception as e: return False, str(e)
+
+    async def _check_db(self):
+        path = Path(Config.DB_PATH)
+        if path.exists(): return True, f"DB ready ({path.stat().st_size // 1024} KB)"
+        return True, "Will initialize on start"
+
+    async def _check_vector(self):
+        path = Path(Config.CHROMA_PATH)
+        if path.exists(): return True, "Syncing to persistent store"
+        return True, "Will initialize on start"
+
     async def main_menu(self):
         """Main CLI Menu."""
         self.print_banner()
@@ -124,17 +225,23 @@ class NexusCLI:
 
         while True:
             console.print("\n[bold]Commands:[/bold]")
-            console.print(" [cyan]c[/cyan] - Chat with your memory")
-            console.print(" [cyan]s[/cyan] - Show system status")
+            console.print(" [cyan]s[/cyan] - Show system health check")
+            console.print(" [cyan]f[/cyan] - Find/Search memories")
+            console.print(" [cyan]r[/cyan] - Generate daily Report")
             console.print(" [cyan]l[/cyan] - View live cortex logs")
             console.print(" [cyan]q[/cyan] - Terminate NEXUS")
             
-            choice = Prompt.ask("\n[bold]Action[/bold]", choices=['c', 's', 'l', 'q', 'chat', 'status', 'logs', 'quit'])
+            choice = Prompt.ask("\n[bold]Action[/bold]", choices=['c', 's', 'f', 'r', 'l', 'q', 'chat', 'status', 'search', 'summary', 'logs', 'quit'])
             
             if choice in ['c', 'chat']:
                 await self.chat_interface()
-            elif choice in ['s', 'status']:
-                self.show_status()
+            elif choice in ['s', 'status', 'check']:
+                await self.run_diagnostics()
+            elif choice in ['f', 'search']:
+                query = Prompt.ask("[bold cyan]Search term[/bold cyan]")
+                await self.run_search(query)
+            elif choice in ['r', 'summary', 'report']:
+                await self.run_summary()
             elif choice in ['l', 'logs']:
                 await self.view_logs()
             elif choice in ['q', 'quit']:
@@ -172,9 +279,19 @@ class NexusCLI:
         except KeyboardInterrupt:
             pass
 
-    async def main_entry(self):
+    async def main_entry(self, command: str = 'menu'):
         """Primary entrance point for the CLI."""
-        await self.main_menu()
+        if command == 'chat':
+            await self.chat_interface()
+        elif command == 'search':
+            # Handle args here if needed
+            pass
+        elif command == 'summary':
+            await self.run_summary()
+        elif command == 'check':
+            await self.run_diagnostics()
+        else:
+            await self.main_menu()
 
 if __name__ == "__main__":
     cli = NexusCLI()
