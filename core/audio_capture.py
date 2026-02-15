@@ -41,8 +41,20 @@ class AudioCaptureService:
         
         self.enabled = Config.AUDIO_ENABLED
         if self.enabled and pyaudio is None:
-            print("[AudioCapture] WARNING: pyaudio not installed. Audio capture will be disabled.")
+            print("[AudioCapture] WARNING: PyAudio/PortAudio not found. Try 'brew install portaudio' on Mac.")
             self.enabled = False
+            
+        # Add basic check for microphone
+        if self.enabled:
+            try:
+                p = pyaudio.PyAudio()
+                if p.get_device_count() == 0:
+                    print("[AudioCapture] WARNING: No microphones detected.")
+                    self.enabled = False
+                p.terminate()
+            except Exception as e:
+                print(f"[AudioCapture] Initialization error: {e}")
+                self.enabled = False
             
         if self.enabled:
             print(f"[AudioCapture] Initialized (rate: {self.sample_rate}Hz, chunk: {self.chunk_duration}s)")
