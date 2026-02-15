@@ -17,15 +17,15 @@ try {
 Write-Host "📦 Installing dependencies..." -ForegroundColor Cyan
 & python -m pip install -r requirements.txt
 
-# Create a batch wrapper
-$BinDir = "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps"
+# Create a batch wrapper in a common local path
+$BinDir = "$env:LOCALAPPDATA\Microsoft\WindowsApps"
 $WrapperPath = "$BinDir\nexus.bat"
 
-Write-Host "🔗 Creating global command 'nexus'..." -ForegroundColor Cyan
+Write-Host "🔗 Creating global command 'nexus' in $BinDir..." -ForegroundColor Cyan
 
 $Content = @"
 @echo off
-cd /d $InstallDir
+cd /d "$InstallDir"
 python main.py %*
 "@
 
@@ -33,5 +33,5 @@ Set-Content -Path $WrapperPath -Value $Content
 
 Write-Host ""
 Write-Host "✅ NEXUS installed successfully!" -ForegroundColor Green
-Write-Host "You can now run 'nexus chat' or 'nexus start' from any terminal." -ForegroundColor Green
+Write-Host "You can now run 'nexus chat', 'nexus search', or 'nexus check' from any terminal." -ForegroundColor Green
 Write-Host ""
