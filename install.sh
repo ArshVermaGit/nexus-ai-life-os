@@ -23,20 +23,23 @@ $PYTHON_CMD -m pip install -r requirements.txt
 
 # Create symlink
 BIN_DIR="/usr/local/bin"
+if [ ! -d "$BIN_DIR" ]; then
+    BIN_DIR="/usr/bin"
+fi
 TARGET="$BIN_DIR/nexus"
 
-echo "🔗 Creating global command 'nexus'..."
+echo "🔗 Creating global command 'nexus' in $BIN_DIR..."
 
 # Create the wrapper script
-sudo bash -c "cat > $TARGET <<EOF
+cat <<EOF | sudo tee $TARGET > /dev/null
 #!/bin/bash
 cd $INSTALL_DIR
-$PYTHON_CMD main.py \\\$@
-EOF"
+$PYTHON_CMD main.py "\$@"
+EOF
 
 sudo chmod +x $TARGET
 
 echo ""
 echo "✅ NEXUS installed successfully!"
-echo "You can now run 'nexus chat' or 'nexus start' from any terminal."
+echo "You can now run 'nexus chat', 'nexus search', or 'nexus check' from any terminal."
 echo ""
