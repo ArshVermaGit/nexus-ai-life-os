@@ -75,27 +75,27 @@ class NexusCLI:
             transient=True,
         ) as progress:
             progress.add_task(description="Waking up nerves...", total=None)
-            self.capture_service = ScreenCaptureService()
-            self.analysis_engine = AnalysisEngine()
+            capture_service = ScreenCaptureService()
+            analysis_engine = AnalysisEngine()
             
             progress.add_task(description="Connecting cortex...", total=None)
-            if self.capture_service and self.analysis_engine:
-                self.capture_service.set_callback(self.analysis_engine.queue_capture)
-                self.capture_service.set_audio_callback(self.analysis_engine.queue_audio)
+            capture_service.set_callback(analysis_engine.queue_capture)
+            capture_service.set_audio_callback(analysis_engine.queue_audio)
             
             progress.add_task(description="Priming proactive agent...", total=None)
             # Create a silent proactive agent for CLI
             pd = ProactiveAgent()
             # In CLI mode, we might want to log alerts instead of showing popups
             pd.set_alert_callback(lambda a: console.print(f"\n[bold yellow]PROACTIVE ALERT:[/bold yellow] {a['message']}"))
-            if self.analysis_engine:
-                self.analysis_engine.on_analysis_callback = pd.evaluate_situation
+            analysis_engine.on_analysis_callback = pd.evaluate_situation
             
             # Start background tasks
-            if self.capture_service:
-                asyncio.create_task(self.capture_service.start())
-            if self.analysis_engine:
-                asyncio.create_task(self.analysis_engine.start())
+            asyncio.create_task(capture_service.start())
+            asyncio.create_task(analysis_engine.start())
+            
+            # Persist to self for menu access
+            self.capture_service = capture_service
+            self.analysis_engine = analysis_engine
             self.running = True
             
         console.print("[bold green]✓ NEXUS Background Engine is now ACTIVE.[/bold green]")
@@ -253,8 +253,10 @@ class NexusCLI:
                 await self.view_logs()
             elif choice in ['q', 'quit']:
                 console.print("\n[bold red]Shutting down NEXUS...[/bold red]")
-                if self.capture_service: self.capture_service.stop()
-                if self.analysis_engine: self.analysis_engine.stop()
+                s1 = self.capture_service
+                s2 = self.analysis_engine
+                if s1: s1.stop()
+                if s2: s2.stop()
                 break
 
     def show_status(self):
