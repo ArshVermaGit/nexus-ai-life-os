@@ -89,20 +89,18 @@ Run the command:
 ./run.sh
 ```
 
-Open your browser to: **http://localhost:8000**
+### The Terminal Interface
 
-### The Interface
+NEXUS runs as a powerful terminal application with an interactive menu:
 
-1.  **Start Monitoring**: Click the **Start Cortex** button. NEXUS will begin capturing screen activity every 10 seconds.
-2.  **Neural Query**: Type in the chat box.
-    - _"What app was I using 10 minutes ago?"_
-    - _"Summarize the article I just read."_
-    - _"How many tabs have I opened?"_
-3.  **Focus Mode**: Click **Focus Mode** to toggle the high-contrast productivity interface.
+1.  **Neural Chat**: Type `c` or `chat` to talk to your memory.
+2.  **Search**: Type `f` or `search` to find specific events.
+3.  **Insights**: Type `r` or `report` for a daily summary.
+4.  **Health**: Type `s` or `status` to check system diagnostics.
 
 ### Stopping
 
-Click **Terminate** in the UI or press `Ctrl+C` in the terminal.
+Press `q` in the menu or `Ctrl+C` to safely shut down the background cortex.
 
 ---
 
@@ -110,12 +108,10 @@ Click **Terminate** in the UI or press `Ctrl+C` in the terminal.
 
 NEXUS is built on a modern, modular stack:
 
-- **Core**: Python 3.10+
-- **Backend**: FastAPI (Async/Await)
+- **Core**: Python 3.10+ (Async/Await)
 - **Database**: SQLite (Metadata) + ChromaDB (Vector Embeddings)
 - **Vision/AI**: Google Gemini 2.0 Flash (Multimodal Analysis)
-- **Frontend**: Vanilla JS + HTML5 + CSS3 (No framework bloat)
-- **Visualization**: Chart.js + HTML5 Canvas (Particle System)
+- **Interface**: Rich Terminal UI (High-performance CLI)
 
 ---
 
