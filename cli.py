@@ -27,9 +27,11 @@ except ImportError:
     # Fallback for simple print if rich is missing during install
     class Console:
         def print(self, *args, **kwargs): print(*args)
-    class Panel:
-        @staticmethod
-        def fit(text, title=None): return text
+        def status(self, *args, **kwargs):
+            from contextlib import contextmanager
+            @contextmanager
+            def dummy(): yield
+            return dummy()
 
 from services.gemini_client import GeminiClient
 from core.query_engine import QueryEngine
@@ -77,19 +79,23 @@ class NexusCLI:
             self.analysis_engine = AnalysisEngine()
             
             progress.add_task(description="Connecting cortex...", total=None)
-            self.capture_service.set_callback(self.analysis_engine.queue_capture)
-            self.capture_service.set_audio_callback(self.analysis_engine.queue_audio)
+            if self.capture_service and self.analysis_engine:
+                self.capture_service.set_callback(self.analysis_engine.queue_capture)
+                self.capture_service.set_audio_callback(self.analysis_engine.queue_audio)
             
             progress.add_task(description="Priming proactive agent...", total=None)
             # Create a silent proactive agent for CLI
             pd = ProactiveAgent()
             # In CLI mode, we might want to log alerts instead of showing popups
             pd.set_alert_callback(lambda a: console.print(f"\n[bold yellow]PROACTIVE ALERT:[/bold yellow] {a['message']}"))
-            self.analysis_engine.on_analysis_callback = pd.evaluate_situation
+            if self.analysis_engine:
+                self.analysis_engine.on_analysis_callback = pd.evaluate_situation
             
             # Start background tasks
-            asyncio.create_task(self.capture_service.start())
-            asyncio.create_task(self.analysis_engine.start())
+            if self.capture_service:
+                asyncio.create_task(self.capture_service.start())
+            if self.analysis_engine:
+                asyncio.create_task(self.analysis_engine.start())
             self.running = True
             
         console.print("[bold green]✓ NEXUS Background Engine is now ACTIVE.[/bold green]")
@@ -139,8 +145,8 @@ class NexusCLI:
                 try: analysis = json.loads(analysis)
                 except: analysis = {}
             
-            insight = analysis.get('activity', 'No details')
-            time_str = act['timestamp'].split('.')[0] if isinstance(act['timestamp'], str) else "Recent"
+            insight = str(analysis.get('activity', 'No details'))
+            time_str = str(act['timestamp']).split('.')[0] if isinstance(act['timestamp'], str) else "Recent"
             
             table.add_row(time_str, act['app_name'], insight[:60] + "...")
         
@@ -178,7 +184,8 @@ class NexusCLI:
         table = Table(show_header=False, box=None)
         
         for name, check_fn in checks:
-            status, msg = await check_fn()
+            result = await check_fn()
+            status, msg = result
             icon = "[bold green]✓[/bold green]" if status else "[bold red]✗[/bold red]"
             table.add_row(f"{icon} {name}", f"[dim]{msg}[/dim]")
             
@@ -211,7 +218,7 @@ class NexusCLI:
         return True, "Will initialize on start"
 
     async def _check_vector(self):
-        path = Path(Config.CHROMA_PATH)
+        path = Path(Config.CHROMA_DIR)
         if path.exists(): return True, "Syncing to persistent store"
         return True, "Will initialize on start"
 
