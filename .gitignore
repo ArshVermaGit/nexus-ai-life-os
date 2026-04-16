@@ -38,9 +38,6 @@ env/
 *.swo
 *~
 
-# ChromaDB
-chroma/
-
 # Screenshots and audio (large files)
 *.jpg
 *.jpeg
